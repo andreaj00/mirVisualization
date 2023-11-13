@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Demo</title>
+    <link rel="stylesheet" type="text/css" href="styles/style.css">
+</head>
+<body>
+<div>
+    Enter Port Number: <input type="text" id="port-input">
+    <button onclick="connectWebSocket()">Connect</button>
+</div>
+
+<div class="message-containers" id="message-containers">
+    <!--<console-component></console-component>-->
+</div>
+
+<script src="scripts/script.js"></script>
+<script src="scripts/console-component.js"></script>
+<!--<link rel="import" id="console-template" href="styles/console-template.html">-->
+
+</body>
+</html>
+
+<!--For now put the template here, TODO move it to another folder, it created some problem when fetching from webconsole-->
+<template id="console-template">
+    <style>
+        .sub-screen {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px;
+        }
+        .log-screen {
+            max-height: 1000px;
+            overflow: auto;
+        }
+        .error-screen{
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            line-height: 1;
+            color: darkred;
+        }
+
+    </style>
+    <div class="sub-screen">
+        <!-- Subscreen for WebSocket Console for Port ${port}:-->
+        <p>WebSocket Console for Port <span id="port-id-placeholder"></span>:</p>
+        <p id="error-placeholder" class="error-screen"></p>
+        <p id="log-placeholder" class="log-screen"></p>
+        <slot></slot>
+    </div>
+</template>
