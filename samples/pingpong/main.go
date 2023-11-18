@@ -52,15 +52,19 @@ func (wsw *WSWriter) Close() error {
 	return wsw.conn.Close()
 }
 
-func (wsw *WSWriter) Write(record eventlog.EventRecord) error {
+// TODO, for now just returning the input record, check with Catherine what to return (there are 4 returns)
+func (wsw *WSWriter) Write(record eventlog.EventRecord) (eventlog.EventRecord, error) {
 	fmt.Println("Starting Write")
-	if wsw.conn == nil {
+
+	// Wait for the connection to be established
+	for wsw.conn == nil {
 		fmt.Println("No connection.")
-		return nil
+		time.Sleep(time.Millisecond * 100) // TODO, double check if we should use this waiting strategy
 	}
+
 	if record.Events == nil {
 		fmt.Println("No events to print.")
-		return nil
+		return record, nil
 	}
 	iter := record.Events.Iterator()
 	for event := iter.Next(); event != nil; event = iter.Next() {
@@ -71,6 +75,8 @@ func (wsw *WSWriter) Write(record eventlog.EventRecord) error {
 			"timestamp": timestamp,
 		}
 
+		fmt.Println(logData) // for now just print, TODO remove this line
+
 		// Marshal the JSON data
 		message, err := json.Marshal(logData)
 		if err != nil {
@@ -79,13 +85,21 @@ func (wsw *WSWriter) Write(record eventlog.EventRecord) error {
 
 		// Send the JSON message over WebSocket
 		if err := wsw.conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
-			return fmt.Errorf("error sending message over WebSocket: %w", err)
+			return record, fmt.Errorf("error sending message over WebSocket: %w", err)
 		}
 
-		fmt.Println(logData) // for now just print, TODO remove this line
+		// Wait for a response from the server
+		_, response, err := wsw.conn.ReadMessage()
+		if err != nil {
+			return record, fmt.Errorf("error reading message from WebSocket: %w", err)
+		}
+		// Process the response as needed
+		fmt.Println("Received response:", string(response))
+		// TODO, add response logic here
+
 	}
 	fmt.Println("Finished Write. Finished all events")
-	return nil
+	return record, nil
 }
 
 func newWSWriter(port string) *WSWriter {
