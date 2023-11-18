@@ -1,0 +1,6 @@
+.message-containers {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 50%));
+    background-color: #2196F3; /*TODO, to delete, just helps to work with the element*/
+    padding: 10px;
+}
