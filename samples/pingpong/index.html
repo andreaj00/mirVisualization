@@ -120,8 +120,8 @@
 
     function makeDecision(port, accept) {
         const ws = websocketConnections[port];
-        const signal = accept ? "keep" : "drop";
-        ws.send(signal);
+        let signal = { type: accept ? "accept" : "decline" };
+        ws.send(JSON.stringify(signal));
 
         if (accept) {
             const currentEventDisplay = document.getElementById(`currEvent-${port}`);

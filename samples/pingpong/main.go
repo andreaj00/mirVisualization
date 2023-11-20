@@ -97,16 +97,25 @@ func (wsw *WSWriter) Write(record eventlog.EventRecord) (eventlog.EventRecord, e
 			continue
 		}
 
+		fmt.Print(value)
+
 		// Decide to keep or drop the event based on the type
 		if actionType == "accept" {
 			// Process the event if the signal is to keep it
 			acceptedEvents.PushBack(event)
 		} else if actionType == "decline" {
-
+			// do nothing
 		} else if actionType == "start" {
 
 		} else if actionType == "delay" {
-
+			num, err := strconv.Atoi(value)
+			dur := time.Duration(num)
+			if err != nil {
+				fmt.Println("Error converting string to int:", err)
+			} else {
+				time.Sleep(dur * time.Millisecond)
+			}
+			acceptedEvents.PushBack(event)
 		} else if actionType == "modify" {
 
 		} else if actionType == "mode" {
