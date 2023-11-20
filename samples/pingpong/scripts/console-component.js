@@ -51,17 +51,81 @@ function createCustomConsoleComponent(port) {
             if (incomingLogButtons) {// Create Accept button
                 const acceptButton = document.createElement('button');
                 acceptButton.textContent = 'Accept';
-                acceptButton.addEventListener('click', (event) => this.acceptIncomingLog(event));
+                acceptButton.addEventListener('click', () => this.acceptIncomingLog());
 
                 // Create Decline button
                 const declineButton = document.createElement('button');
                 declineButton.textContent = 'Decline';
-                declineButton.addEventListener('click', (event) => this.declineIncomingLog(event) );
+                declineButton.addEventListener('click', () => this.declineIncomingLog() );
+
+                // Create Delay section with button and input field
+                const delayDiv = document.createElement('div');
+                delayDiv.className = 'delay-div';
+                const delayButton = document.createElement('button');
+                delayButton.textContent = 'Delay';
+                delayButton.addEventListener('click', () => this.delayIncomingLog() );
+                // Create an input field for milliseconds
+                const delayMillisecondsInput = document.createElement('input');
+                delayMillisecondsInput.type = 'number';
+                delayMillisecondsInput.id = 'delay-milliseconds-input';
+                delayMillisecondsInput.placeholder = 'Enter milliseconds';
+                delayMillisecondsInput.min = 0;
+                delayMillisecondsInput.step = 1;
+                // Create a span element for 'ms'
+                const msSpan = document.createElement('span');
+                msSpan.textContent = 'ms';
+
+                delayDiv.appendChild(delayMillisecondsInput);
+                delayDiv.appendChild(msSpan);
+                delayDiv.appendChild(delayButton);
 
                 // Append the buttons to the incoming-log-buttons element
                 incomingLogButtons.appendChild(acceptButton);
                 incomingLogButtons.appendChild(declineButton);
+                incomingLogButtons.appendChild(delayDiv);
             }
+
+            // Create a close connection button
+            const closeButton = document.createElement('button');
+            closeButton.textContent = 'Close Connection';
+            closeButton.addEventListener('click', () => this.closeConnection());
+            closeButton.classList.add('close-button');
+            const subScreen = this.content.getElementById('sub-screen');
+            subScreen.insertBefore(closeButton, this.content.getElementById('websocket-title'));
+
+            // Create a switch for Sync/Async mode
+            const syncSwitchLabel = document.createElement("label");
+            syncSwitchLabel.className = "switch";
+
+            const syncSwitchInput = document.createElement("input");
+            syncSwitchInput.type = "checkbox";
+            syncSwitchInput.id = "sync-switch-input";
+            syncSwitchInput.checked = true;
+
+            const syncSwitchSliderDiv = document.createElement("div");
+            syncSwitchSliderDiv.className = "slider round";
+
+            // Create span element for "Confirmed" text
+            const syncSwitchOnSpan = document.createElement("span");
+            syncSwitchOnSpan.className = "on";
+            syncSwitchOnSpan.appendChild(document.createTextNode("Sync"));
+
+            // Create span element for "NA" text
+            const syncSwitchOffSpan = document.createElement("span");
+            syncSwitchOffSpan.className = "off";
+            syncSwitchOffSpan.appendChild(document.createTextNode("Async"));
+
+            // Append elements to build the HTML structure
+            syncSwitchSliderDiv.appendChild(syncSwitchOnSpan);
+            syncSwitchSliderDiv.appendChild(syncSwitchOffSpan);
+
+            syncSwitchLabel.appendChild(syncSwitchInput);
+            syncSwitchLabel.appendChild(syncSwitchSliderDiv);
+
+            syncSwitchInput.addEventListener('change', () => this.changeSyncronization());
+
+            subScreen.insertBefore(syncSwitchLabel, closeButton);
+
 
             // Connect WebSocket
             this.connectWebSocket();
@@ -85,15 +149,19 @@ function createCustomConsoleComponent(port) {
         //     console.log("connectedCallback", this.shadowRoot.innerHTML);
         // }
 
-        acceptIncomingLog( {event} ){
+        acceptIncomingLog(){
             const incomingLog = this.shadowRoot.getElementById('incoming-log-placeholder').textContent;
             if (incomingLog === "") {
                 return
             }
 
             // Accept Log and clear the input
-            this.writeAdditionalLog(incomingLog, 'log-placeholder')
             this.shadowRoot.getElementById('incoming-log-placeholder').textContent = ""
+            this.addLogAndRespondToWS(incomingLog);
+        }
+
+        addLogAndRespondToWS(incomingLog) {
+            this.writeAdditionalLog(incomingLog, 'log-placeholder')
 
             // Send the response on the WebSocket
             let webSocketResponse = {
@@ -104,7 +172,7 @@ function createCustomConsoleComponent(port) {
             this.ws.send(webSocketResponseJSON);
         }
 
-        declineIncomingLog( {event} ){
+        declineIncomingLog(){
             if (this.shadowRoot.getElementById('incoming-log-placeholder').textContent === "") {
                 return
             }
@@ -116,6 +184,72 @@ function createCustomConsoleComponent(port) {
             // Send the response on the WebSocket
             let webSocketResponse = {
                 "Type": "decline",
+                "Value": ""
+            };
+            const webSocketResponseJSON = JSON.stringify(webSocketResponse);
+            this.ws.send(webSocketResponseJSON);
+        }
+
+        delayIncomingLog(){
+            const incomingLog = this.shadowRoot.getElementById('incoming-log-placeholder').textContent;
+            if (incomingLog === "") {
+                return
+            }
+
+            // Get the delay values
+            const delayMilliseconds = this.shadowRoot.getElementById('delay-milliseconds-input').value;
+            // TODO add input check on delayMilliseconds
+
+            // Accept Log and clear the input
+            this.writeAdditionalLog(incomingLog, 'log-placeholder')
+            this.shadowRoot.getElementById('incoming-log-placeholder').textContent = ""
+
+            // Send the response on the WebSocket
+            let webSocketResponse = {
+                "Type": "delay",
+                "Value": delayMilliseconds
+            };
+            const webSocketResponseJSON = JSON.stringify(webSocketResponse);
+            this.ws.send(webSocketResponseJSON);
+        }
+
+        changeSyncronization(){
+            let responseValue = ""
+            if(this.shadowRoot.getElementById('sync-switch-input').checked){
+                // Sync mode
+                responseValue = 'sync'
+                // Unhide the incoming-log-div
+                this.shadowRoot.getElementById('incoming-log-div').style.display = 'block';
+            }
+            else {
+                // Async mode
+                responseValue = 'async'
+                // Hide the incoming-log-div
+                this.shadowRoot.getElementById('incoming-log-div').style.display = 'none';
+
+                //TODO, check this default behaviour
+                // By default, accept the Incoming Log not accepted yet (if empty there is a check inside the function)
+                this.acceptIncomingLog()
+            }
+
+
+
+            // Send the response on the WebSocket
+            let webSocketResponse = {
+                "Type": "mode",
+                "Value": responseValue
+            };
+            const webSocketResponseJSON = JSON.stringify(webSocketResponse);
+            this.ws.send(webSocketResponseJSON);
+        }
+
+        closeConnection(){
+            console.log('Closing connection from button');
+            this.ws.close()
+
+            // Send the response on the WebSocket
+            let webSocketResponse = {
+                "Type": "close",
                 "Value": ""
             };
             const webSocketResponseJSON = JSON.stringify(webSocketResponse);
@@ -145,7 +279,14 @@ function createCustomConsoleComponent(port) {
             this.ws.addEventListener('message', (event) => {
                 // console.log(`WebSocket ${this.port}  message received: ${event.data}`);
                 // Add the new message to the Incoming Log
-                this.shadowRoot.getElementById('incoming-log-placeholder').textContent = this.decomposeJSON(JSON.parse(event.data))
+                if( this.shadowRoot.getElementById('sync-switch-input').checked){
+                    // Sync mode
+                    this.shadowRoot.getElementById('incoming-log-placeholder').textContent = this.decomposeJSON(JSON.parse(event.data))
+                }
+                else {
+                    // Async mode
+                    this.addLogAndRespondToWS(this.decomposeJSON(JSON.parse(event.data)));
+                }
             });
 
             this.ws.addEventListener('close', (event) => {

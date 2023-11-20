@@ -50,9 +50,30 @@
             color: #c0392b; /* Darker red color */
         }
 
-        /* Add styling for the input and buttons if needed */
         .incoming-log-div {
             margin-top: 15px;
+        }
+
+        .delay-div {
+            display: flex;
+            align-items: center; /* Align items vertically in the center */
+            margin-top: 0; /* Remove top margin for inline alignment with other buttons */
+        }
+
+        button {
+            margin-right: 10px;
+        }
+
+        .close-button {
+            background-color: #c0392b; /* Red color */
+            color: #fff; /* White text color */
+            border: none;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            float: right; /* Float the button to the right */
+            margin: 5px;
         }
 
         .incoming-log-screen {
@@ -85,16 +106,95 @@
             margin-top: 5px;
             overflow: auto;
         }
+
+        /* Add the following styles for the switch (used for Sync/Async mode) */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 90px;
+            height: 34px;
+        }
+
+        .switch input {display:none;}
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ca2222;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: #2ab934;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #2196F3;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(55px);
+            -ms-transform: translateX(55px);
+            transform: translateX(55px);
+        }
+
+        .on
+        {
+            display: none;
+        }
+
+        .on, .off
+        {
+            color: white;
+            position: absolute;
+            transform: translate(-50%,-50%);
+            top: 50%;
+            left: 50%;
+            font-size: 14px;
+            font-family: Verdana, sans-serif;
+        }
+
+        input:checked+ .slider .on
+        {display: block;}
+
+        input:checked + .slider .off
+        {display: none;}
+
+        /* Rounded sliders */
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;}
     </style>
-    <div class="sub-screen">
+    <div class="sub-screen" id="sub-screen">
         <!-- Subscreen for WebSocket Console for Port ${port}:-->
-        <p>WebSocket Console for Port <span id="port-id-placeholder"></span>:</p>
+        <p id="websocket-title">WebSocket Console for Port <span id="port-id-placeholder"></span>:</p>
         <p id="error-placeholder" class="error-screen"></p>
         <div id="incoming-log-div" class="incoming-log-div">
             Incoming Log:
             <div id="incoming-log-placeholder" class="incoming-log-screen json-message"></div>
             <p id="incoming-log-buttons" class="incoming-log-buttons"></p>
         </div>
+        Accepted Logs:
         <div id="log-placeholder" class="log-screen json-message"></div>
         <slot></slot>
     </div>
