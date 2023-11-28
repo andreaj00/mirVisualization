@@ -58,9 +58,9 @@ func (wsw *WSWriter) Close() error {
 
 func (wsw *WSWriter) Write(record eventlog.EventRecord) (eventlog.EventRecord, error) {
 	//fmt.Println("Starting Write")
-	if wsw.conn == nil {
+	for wsw.conn == nil {
 		fmt.Println("No connection.")
-		return record, nil
+		time.Sleep(time.Millisecond * 100) // TODO, double check if we should use this waiting strategy
 	}
 	if record.Events == nil {
 		fmt.Println("No events to print.")
@@ -133,8 +133,6 @@ func (wsw *WSWriter) Write(record eventlog.EventRecord) (eventlog.EventRecord, e
 }
 
 func (wsw *WSWriter) HandleClientSignal(signal map[string]interface{}) {
-	// Handle the signal as needed
-	// For example, you can send it over the channel as a JSON string
 	//signalJSON, _ := json.Marshal(signal)
 	wsw.eventSignal <- signal
 }
@@ -225,9 +223,10 @@ func main() {
 		"1": {"1", "/ip4/127.0.0.1/tcp/10001", nil, "1"}, // nolint:govet
 	}}
 
+	//interceptor toggle?
+
 	// Get own ID from command line.
 	ownID := t.NodeID(os.Args[1])
-
 	// Instantiate network trnasport module and establish connections.
 	transport, err := grpc.NewTransport(ownID, membership.Nodes[ownID].Addr, logging.ConsoleWarnLogger)
 	if err != nil {
